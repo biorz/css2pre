@@ -13,7 +13,7 @@
 
 ------
 
-![css](https://github.com/biorz/css2pre/blob/master/demo/css.png){:width="45%" style="margin-right: 10%;"} ![sass](https://github.com/biorz/css2pre/blob/master/demo/sass.png){:width="45%"}
+![css](https://github.com/biorz/css2pre/blob/master/demo/css.png = 300x) ![sass](https://github.com/biorz/css2pre/blob/master/demo/sass.png =300x)
 
 ## 优点
 最大兼容，在保留原css顺序，注释等内容的基础上，最小合并相邻的块；
