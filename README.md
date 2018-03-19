@@ -13,10 +13,6 @@
 
 ------
 
-
-<img width="45%" style="margin-right: 8%; float: left;" src="https://github.com/biorz/css2pre/blob/master/demo/css.png"/>
-<img width="45%" style="float: right;" src="https://github.com/biorz/css2pre/blob/master/demo/sass.png"/>
-
 ## 优点
 最大兼容，在保留原css顺序，注释等内容的基础上，最小合并相邻的块；
 
@@ -33,3 +29,6 @@ let less = css2pre('html, body{ margin:0;padding:0; }')
 - [x] 保留注释
 - [x] 保留顺序
 - [ ] 浏览器私有前缀
+
+<img src="https://github.com/biorz/css2pre/blob/master/demo/css.png"/>
+<img src="https://github.com/biorz/css2pre/blob/master/demo/sass.png"/>
