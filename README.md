@@ -13,7 +13,7 @@
 
 ------
 
-<!-- ![css]() ![less]() -->
+![css](https://github.com/biorz/css2pre/blob/master/demo/css.png) ![sass](https://github.com/biorz/css2pre/blob/master/demo/sass.png)
 
 ## 优点
 最大兼容，在保留原css顺序，注释等内容的基础上，最小合并相邻的块；
