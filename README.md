@@ -13,8 +13,8 @@
 
 ------
 
-<img width="150" height="150" src="http://img.blog.csdn.net/20161028230559575"/>
-![sass](https://github.com/biorz/css2pre/blob/master/demo/sass.png =300x)
+<img width="45%" style="margin-right: 10%;" src="https://github.com/biorz/css2pre/blob/master/demo/css.png"/>
+<img width="45%" src="https://github.com/biorz/css2pre/blob/master/demo/sass.png"/>
 
 ## 优点
 最大兼容，在保留原css顺序，注释等内容的基础上，最小合并相邻的块；
