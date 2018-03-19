@@ -30,5 +30,4 @@ let less = css2pre('html, body{ margin:0;padding:0; }')
 - [x] 保留顺序
 - [ ] 浏览器私有前缀
 
-<img src="https://github.com/biorz/css2pre/blob/master/demo/css.png"/>
-<img src="https://github.com/biorz/css2pre/blob/master/demo/sass.png"/>
+<img src="https://github.com/biorz/css2pre/blob/master/demo/css2sass.png"/>
