@@ -87,3 +87,70 @@ export let deconStruct = (str, tree, start, end) => {
 
   return tree;
 };
+
+export let arr2 = function (arr) {
+  class Arr2 {
+    constructor(arr) {
+
+      this.value = arr
+    }
+
+    getMinLength () {
+      let i = 0,
+        lens = []
+      for (; i < this.value.length; i++) {
+        lens.push(this.value[i].length);
+      }
+
+      return Math.min.apply(Math, lens);
+    }
+
+    getEqualAhead() {
+      let i,
+        j,
+        isBreak,
+        len = this.getMinLength()
+
+      for (i = 0; i < len; i++) {
+        for (j = 1; j < this.value.length; j++) {
+          if (this.value[j][i] !== this.value[j - 1][i]) {
+            isBreak = true;
+            break;
+          }
+        }
+        if (isBreak) break;
+      }
+
+      console.log(this.value[0].slice(0, i))
+      return this.value[0].slice(0, i)
+    }
+  }
+
+  return new Arr2(arr);
+}
+
+export let each = (itera, fn) => {
+  let next;
+
+  if(Array.isArray(itera)) {
+    for(let i = 0; i < itera.length; i++) {
+      if(next = fn(itera[i], i)) {
+        if(next === 'break') break
+        if(next === 'continue') continue
+      }
+    }
+    return
+  }
+
+  else if(itera instanceof Object){
+    for(let k in itera) {
+      if(next = fn(itera[i], i)) {
+        if(next === 'break') break
+        if(next === 'continue') continue
+      }
+    }
+    return
+  }
+
+  throw new Error('need itera data')
+}

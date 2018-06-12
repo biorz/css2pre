@@ -1,4 +1,13 @@
-import { get, set, deconStruct, extend, splitFirst, splitTrim } from "./utils";
+import {
+  get,
+  set,
+  deconStruct,
+  extend,
+  splitFirst,
+  splitTrim,
+  arr2,
+  each
+} from "./utils";
 
 let def = {
   vendorPrefixesList: ["-moz", "-o", "-ms", "-webkit"],
@@ -16,7 +25,7 @@ def.vendorPrefixesReg = new RegExp(
   "gi"
 );
 
-let cons = function(str, options) {
+let cons = function (str, options) {
   if (!str) {
     throw new Error("converter has css string");
   }
@@ -51,107 +60,106 @@ extend(cons.prototype, {
     temp = temp || deconStruct(this.css, [], "{", "}");
 
     if (temp.isStyle) {
-      temp.some((it, i) => {
-        if (/\/\*/.test(it)) {
-          this.processNotes(temp, i);
-          return true;
-        }
-      });
       return;
     }
 
-    let index = 0,
-      pre = -1,
-      cur = -1;
+    this.shouldMerge((shouldMerge) => {
+      let cur = -1
 
-    // 666
-    while (cur < temp.length - 1) {
-      cur++;
+      while(cur < temp.length) {
+        cur ++
 
-      if (!temp[cur]) {
-        continue;
+        if (!temp[cur]) continue;
+
+        if (this.isSpecial(temp, cur)) {
+          this.processImport(temp, cur);
+          continue;
+        }
+
+        if (this.isNote(temp, cur)) {
+          this.processNotes(temp, cur);
+          continue;
+        }
+
+        if (this.isStyle(temp, cur)) {
+          this.processStyle(temp, cur);
+          continue;
+        }
+
+        shouldMerge(temp, cur)
       }
+    })
+
+    temp.forEach((item, cur) => {
       if (Array.isArray(temp[cur])) {
-        continue;
+        this.buildTree(temp[cur]);
       }
-
-      if (/@.*?;/.test(temp[cur])) {
-        this.processImport(temp, cur);
-        continue;
-      }
-      if (/\/\*/.test(temp[cur])) {
-        this.processNotes(temp, cur);
-        continue;
-      }
-
-      if (this.isStyle(temp, cur)) {
-        this.processStyle(temp, cur);
-        pre = -1;
-        continue;
-      }
-
-      if (temp[cur + 1]) {
-        if (this.isComma(temp, cur)) {
-          this.processComma(temp, cur);
-        }
-        this.preProcess(temp, cur);
-        if (~pre) {
-          this.closeMerge(temp, pre, cur);
-        }
-      }
-
-      pre = cur;
-    }
-
-    while (index < temp.length) {
-      if (Array.isArray(temp[index])) {
-        this.buildTree(temp[index]);
-      }
-      index++;
-    }
+    })
 
     return temp;
   },
 
-  closeMerge(arr, pre, cur) {
-    let a1,
-      a2,
-      extract,
-      ext,
-      short = pre,
-      long = cur,
-      push,
-      action = "unshift";
+  shouldMerge(callback) {
+    let closeRule = []
 
-    a1 = splitTrim(this.processQuote(arr, pre), " ");
-    a2 = splitTrim(this.processQuote(arr, cur), " ");
+    let push = (temp, cur) => {
+      closeRule.push(cur)
+
+      if (closeRule.length % 2 && typeof temp[cur] !== 'string') return
+      else if (typeof temp[cur] !== 'object') return
+
+      if (closeRule.length === 4) {
+        this.closeMerge(temp, ...closeRule)
+        closeRule.splice(0, 2)
+      }
+    }
+
+    callback && callback(push)
+  },
+
+  closeMerge(arr, r1, s1, r2, s2) {
+    if (this.isComma(arr[r1]) || this.isComma(arr[r2])) return
+
+    let a1 = splitTrim(this.processQuote(arr[r1]), " ");
+    let a2 = splitTrim(this.processQuote(arr[r2]), " ");
 
     if (a1.length > a2.length) {
-      short = cur;
-      long = pre;
-      a1 = [a2, (a2 = a1)][0];
+      a1 = [a2, (a2 = a1)][0]
+      r1 = [r2, (r2 = r1)][0];
+      s1 = [s2, (s2 = s1)][0];
     }
 
-    for (let i = 0; i < a1.length; i++) {
-      if (a1[i] !== a2[i]) return;
+    let i = 0;
+    for (; i < a1.length; i++) {
+      if (a1[i] !== a2[i]) break;
     }
 
-    extract = a1.join(" ").replace(/ &/, "");
-    ext = a2
-      .slice(a1.length)
+    if (!i) return;
+
+    let selector = a2
+      .slice(0, i)
       .join(" ")
       .replace(/ &/, "");
-    push = ext.length ? [ext, arr[long + 1]] : arr[long + 1];
 
-    if (short < long) {
-      arr[cur] = arr[pre];
-      arr[cur + 1] = arr[pre + 1];
-      action = "push";
-    }
-    arr[pre] = "";
-    arr[pre + 1] = "";
+    let child = a1.slice(i).join(' ')
+      ? [] : arr[s1]
 
-    [][action].apply(arr[cur + 1], push);
+    child = child.length
+      ? child.concat([
+        a2.slice(i).join(' '),
+        arr[s2]
+      ])
+      : child.concat([
+        a1.slice(i).join(' '),
+        arr[s1],
+        a2.slice(i).join(' '),
+        arr[s2]
+      ])
+
+    arr[r1] = ''
+    arr[s1] = ''
+    arr[r2] = selector
+    arr[s2] = child
   },
 
   processImport(arr, cur) {
@@ -160,23 +168,27 @@ extend(cons.prototype, {
       im = str;
       return "";
     });
+
     arr.splice(cur, 0, im);
   },
 
   processNotes(arr, cur) {
-    let note;
-
+    let nt;
     arr[cur] = arr[cur].replace(/\/\*(.*?)\*\//, (str, $1) => {
-      note = "/*" + $1 + "*/";
+      nt = "/*" + $1 + "*/";
       return "";
     });
 
-    arr.splice(cur, 0, note);
+    arr.splice(cur, 0, nt);
   },
 
-  processQuote(arr, cur) {
+  processQuote(r) {
+    if (!r.replace) {
+      debugger
+    }
+
     let rule;
-    rule = arr[cur].replace(/[^&:](:{1,2})/gi, str => {
+    rule = r.replace(/[^&:](:{1,2})/gi, str => {
       return str.replace(/:{1,2}/, str => " &" + str);
     });
     rule = rule.replace(/[\w\d][#.]/gi, str => {
@@ -209,71 +221,104 @@ extend(cons.prototype, {
     arr[cur + 1] = rst[1];
   },
 
-  isStyle(arr, index) {
-    return /:/.test(arr[index]) && !Array.isArray(arr[index + 1]);
+  isSpecial(arr, index) {
+    if (typeof (arr[index]) !== 'string') return false
+
+    return /@.*?;/.test(arr[index])
   },
 
-  processStyle: function(arr, index) {
-    let styles = [],
-      style = arr[index];
+  isNote(arr, index) {
+    if (typeof (arr[index]) !== 'string') return false
+
+    return /\/\*/.test(arr[index])
+  },
+
+  isStyle(arr, index) {
+    return !Array.isArray(arr[index])
+      && !Array.isArray(arr[index + 1])
+      && /:/.test(arr[index]);
+  },
+
+  processStyle(arr, index) {
+    var css = arr[index].trim();
+
+    function match(re) {
+      var m = re.exec(css);
+      if (!m) return;
+      var str = m[0];
+      css = css.slice(str.length);
+      return m;
+    }
+
+    function declaration() {
+      // prop
+      var prop = match(/^(\*?[-#\/\*\\\w]+(\[[0-9a-z_-]+\])?)\s*/);
+
+      if (!prop) return;
+      prop = prop[0].trim();
+
+      // :
+      if (!match(/^:\s*/)) throw new Error("property missing ':'");
+
+      // val
+      var val = match(/^((?:'(?:\\'|.)*?'|"(?:\\"|.)*?"|\([^\)]*?\)|[^};])+)/);
+      val = val ? val[0].trim() : '';
+      // ;
+      match(/^[;\s]*/);
+
+      return prop + ':' + val + '';
+    }
+
+    var styles = [], style;
+    while (style = declaration()) {
+      if (style) {
+        styles.push(style);
+      }
+    }
 
     styles.isStyle = true;
-    [].push.apply(styles, splitTrim(style, /;/));
 
-    arr[index] = styles;
+    arr.splice(index, 1, styles);
   },
 
-  isComma(arr, cur) {
-    if (/@/.test(arr[cur])) return false;
-    if (/,/.test(arr[cur])) return true;
+  isComma(str) {
+    if (/@/.test(str)) return false;
+    if (/,/.test(str)) return true;
 
     return false;
   },
 
   processComma(arr, cur) {
-    let splitRules,
-      i = 0,
-      j = 0,
-      lens = [],
-      len,
-      extract,
-      isBreak,
-      val;
+    let splitRules, ahead, val;
 
-    splitRules = splitTrim(this.processQuote(arr, cur), ",");
-    splitRules = splitRules.map(it => splitTrim(it, " "));
+    splitRules = splitTrim(this.processQuote(arr, cur), ",")
+      .map(it =>
+        splitTrim(it, " ")
+      );
 
-    for (; i < splitRules.length; i++) {
-      lens.push(splitRules[i].length);
-    }
-    len = Math.min.apply(Math, lens);
+    ahead = arr2(splitRules).getEqualAhead();
 
-    for (i = 0; i < len; i++) {
-      for (j = 1; j < splitRules.length; j++) {
-        if (splitRules[j][i] !== splitRules[j - 1][i]) {
-          isBreak = true;
-          break;
-        }
-      }
-      if (isBreak) break;
-    }
+    if (!ahead.length) return;
 
-    if (!i) return;
-
-    extract = splitRules[0].slice(0, i);
     splitRules = splitRules.map(it => {
-      return it.slice(i).join(" ") || "&";
+      if (!it) return "&";
+
+      return it
+        .slice(ahead.length)
+        .join(" ")
+        .replace(" &", "");
     });
+
     val = arr[cur + 1];
-    arr[cur] = extract.join(" ");
+    arr[cur] = ahead.join(" ");
     arr[cur + 1] = [splitRules.join(","), val];
   },
 
-  convert: function() {
+  convert: function () {
     throw new Error("this action need overwrite");
   },
 
-  to: function(type) {
+  to: function (type) {
     if (!converter[type]) {
       throw new Error("不支持的格式");
     }
