@@ -31,4 +31,4 @@ let less = css2pre('html, body{ margin:0;padding:0; }')
 - [ ] 浏览器私有前缀
 
 ### 3. 示例
-<img src="https://github.com/biorz/css2pre/blob/master/demo/css2sass.png"/>
+<img src="./example/css2sass.png"/>
