@@ -121,7 +121,6 @@ export let arr2 = function (arr) {
         if (isBreak) break;
       }
 
-      console.log(this.value[0].slice(0, i))
       return this.value[0].slice(0, i)
     }
   }
@@ -141,7 +140,6 @@ export let each = (itera, fn) => {
     }
     return
   }
-
   else if(itera instanceof Object){
     for(let k in itera) {
       if(next = fn(itera[i], i)) {
