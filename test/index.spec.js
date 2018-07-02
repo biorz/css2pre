@@ -9,7 +9,7 @@ const expect = chai.expect;
 
 let lib;
 
-describe('css2less', () => {
+describe('css2less;', () => {
   before(() => {
     lib = new css2pre(' ');
   });
